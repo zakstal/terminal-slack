@@ -4,7 +4,7 @@ var request = require('request'),
 
 module.exports = {
     init: function(callback) {
-        var self = this;
+        // sets up the real time messaging api
         request.get({
             url: 'https://slack.com/api/rtm.start',
             qs: {
@@ -22,10 +22,9 @@ module.exports = {
             callback(data, ws);
         });
     },
-    getChannels: function(callback) {
-
+    slackGet: function(url, callback) {
         request.get({
-            url: 'https://slack.com/api/channels.list',
+            url: url,
             qs: {
                 token: TOKEN,
             }
@@ -34,9 +33,46 @@ module.exports = {
             if(callback) callback(error, response, data);
         });
     },
-    joinChannel: function(name, callback) {
+    getChannels: function(callback) {
+        this.slackGet('https://slack.com/api/channels.list', callback);
+    },
+    getIms: function(callback) {
+        this.slackGet('https://slack.com/api/im.list', callback);
+    },
+    getGroups: function(callback) {
+        this.slackGet('https://slack.com/api/groups.list', callback);
+    },
+    getRooms: function(callback) {
+        var numResponses = 0,
+            rooms = {
+                channels: [],
+                ims: [],
+                groups: []
+            };
+        this.getChannels(onResponse.bind(null, 'channels'));
+        this.getIms(onResponse.bind(null, 'ims'));
+        this.getGroups(onResponse.bind(null, 'groups'));
+
+        function onResponse(roomType, error, response, data){
+            if (error || response.statusCode != 200) {
+                console.log('Error: ', error, response || response.statusCode);
+                return;
+            }
+            data = JSON.parse(data);
+            rooms[roomType] = data[roomType].map(function(item) {
+                item.type = roomType.slice(0, -1); // add type without 's'
+                return item;
+            });
+            numResponses += 1;
+            if (numResponses == 3 && callback) {
+                callback(rooms.channels.concat(rooms.ims).concat(rooms.groups));
+            }
+        }
+    },
+    // roomType is 'channels', 'im', or 'group'
+    joinRoom: function(roomType, name, callback) {
         request.get({
-            url: 'https://slack.com/api/channels.join',
+            url: 'https://slack.com/api/' + roomType + '.join',
             qs: {
                 token: TOKEN,
                 name: name
@@ -46,9 +82,10 @@ module.exports = {
             if(callback) callback(error, response, data);
         });
     },
-    getChannelHistory: function(id, callback) {
+    // roomType is 'channels', 'im', or 'group'
+    getRoomHistory: function(roomType, id, callback) {
         request.get({
-            url: 'https://slack.com/api/channels.history',
+            url: 'https://slack.com/api/' + roomType + '.history',
             qs: {
                 token: TOKEN,
                 channel: id

@@ -1,6 +1,13 @@
+/**
+ * Entry point. Inits the rtm, gets the channels and users, then sets up the event listeners
+ * for entering rooms and sending messages.
+ *
+ * TODO: refactor for clarity and use of different room types.
+ */
+
 var ui = require('./userInterface.js'),
     slack = require('./slackClient.js'),
-    fs = require('fs'),
+    //fs = require('fs'),
     components = ui.init(), // ui components
     users,
     channels,
@@ -14,6 +21,7 @@ var ui = require('./userInterface.js'),
         };
     })();
 
+// inits the rtm
 slack.init(function(data, ws) {
     var currentUser = data.self;
 
@@ -24,7 +32,6 @@ slack.init(function(data, ws) {
     // re render screen
     components.screen.render();
 
-    //fs.appendFile('./ws_log.txt', '\n\n###############\n\n');
     ws.on('message', function(message, flags){
         message = JSON.parse(message);
 
@@ -64,25 +71,23 @@ slack.init(function(data, ws) {
 components.channelList.setItems(['Connecting to Slack...']);
 components.screen.render();
 
-// set the channel list to the channels returned from slack
-slack.getChannels(function(error, response, data){
-    if (error || response.statusCode != 200) {
-        console.log('Error: ', error, response || response.statusCode);
-        return;
-    }
-
-    data = JSON.parse(data);
-    channels = data.channels;
-    components.channelList.setItems(
-        channels.map(function(channel) {
-            return channel.name;
-        })
-    );
-});
-
-// get list of users
+// get list of users and set channel list
+// TODO: kill callback chaining
 slack.getUsers(function(response, error, data){
     users = JSON.parse(data).members;
+
+    // set the channel list to the channels returned from slack
+    slack.getRooms(function(rooms){
+        components.channelList.setItems(
+            rooms.map(function(room) {
+                if (room.name) return room.name;
+                for (var i = users.length - 1; i >= 0; i -= 1) // is a user
+                    if (room.user == users[i].id) return users[i].name;
+                return room.user;
+            })
+        );
+        components.screen.render();
+    });
 });
 
 // event handler when user selects a channel
@@ -95,7 +100,7 @@ components.channelList.on('select', function(data) {
     components.screen.render();
 
     // join the selected channel
-    slack.joinChannel(channelName, function(error, response, data) {
+    slack.joinRoom('channels', channelName, function(error, response, data) {
         if (error || response.statusCode != 200) {
             console.log('Error: ', error, response || response.statusCode);
             return;
@@ -105,7 +110,7 @@ components.channelList.on('select', function(data) {
         currentChannelId = data.channel.id;
 
         // get the previous messages of the channel and display them
-        slack.getChannelHistory(currentChannelId, function(error, response, data) {
+        slack.getRoomHistory('channels', currentChannelId, function(error, response, data) {
             if (error || response.statusCode != 200) {
                 console.log('Error: ', error, response || response.statusCode);
                 return;

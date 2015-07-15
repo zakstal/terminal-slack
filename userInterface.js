@@ -29,7 +29,6 @@ module.exports = {
                         fg: '#888'
                     }
                 }
-
             }),
 
             sideBarTitle = blessed.text({
