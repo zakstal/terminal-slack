@@ -81,5 +81,40 @@ module.exports = {
         function(error, response, data) {
             if(callback) callback(error, response, data);
         });
+    },
+    getIms: function(callback) {
+        request.get({
+            url: 'https://slack.com/api/im.list',
+            qs: {
+                token: TOKEN,
+            }
+        },
+        function(error, response, data) {
+            if(callback) callback(error, response, data);
+        });
+    },
+    getImHistory: function(channel, callback) {
+        request.get({
+                url: 'https://slack.com/api/im.history',
+                qs: {
+                    token: TOKEN,
+                    channel: channel
+                }
+            },
+            function(error, response, data) {
+                if(callback) callback(error, response, data);
+            });
+    },
+    openDirectIm: function(userId, callback) {
+        request.get({
+                url: 'https://slack.com/api/im.open',
+                qs: {
+                    token: TOKEN,
+                    user: userId
+                }
+            },
+            function(error, response, data) {
+                if(callback) callback(error, response, data);
+            });
     }
 };

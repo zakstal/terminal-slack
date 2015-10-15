@@ -19,8 +19,9 @@ module.exports = {
             }),
 
             sideBar = blessed.box({
-                width: '30%',
+                width: '20%',
                 height: '100%',
+                left: '10%',
                 border: {
                     type: 'line'
                 },
@@ -40,11 +41,46 @@ module.exports = {
                 tags: true
             }),
 
+            sideBarSubTitle = blessed.text({
+                width: '90%',
+                left: '5%',
+                align: 'center',
+                content: '{bold}Users{/bold}',
+                tags: true
+            }),
+
+            channelContainer = blessed.box({
+                width: '95%',
+                height: '45%',
+                //border: {
+                //    type: 'line'
+                //},
+                //style: {
+                //    border: {
+                //        fg: '#888'
+                //    }
+                //}
+            }),
+
+            usersContainer = blessed.box({
+                width: '95%',
+                height: '50%',
+                top: '45%',
+                //border: {
+                //    type: 'line'
+                //},
+                //style: {
+                //    border: {
+                //        fg: '#888'
+                //    }
+                //}
+            }),
+
             channelList = blessed.list({
                 width: '90%',
-                height: '85%',
+                height: '50%',
                 left: '5%',
-                top: '10%',
+                top: '14%',
                 keys: true,
                 vi: true,
                 style: {
@@ -54,6 +90,36 @@ module.exports = {
                     }
                 },
                 tags: true
+            }),
+
+            userList = blessed.list({
+                width: '90%',
+                height: '50%',
+                left: '5%',
+                top: '14%',
+                keys: true,
+                vi: true,
+                style: {
+                    selected: {
+                        bg: '#373b41',
+                        fg: '#c5c8c6'
+                    }
+                },
+                tags: true
+            }),
+
+            otherGroup = blessed.box({
+                width: '10%',
+                height: '100%',
+                border: {
+                    type: 'line'
+                },
+                style: {
+                    border: {
+                        fg: '#888'
+                    }
+                }
+
             }),
 
             mainWindow = blessed.box({
@@ -97,12 +163,17 @@ module.exports = {
                 }
             });
 
-        sideBar.append(sideBarTitle);
-        sideBar.append(channelList);
+        channelContainer.append(sideBarTitle);
+        channelContainer.append(channelList);
+        usersContainer.append(sideBarSubTitle);
+        usersContainer.append(userList);
+        sideBar.append(channelContainer);
+        sideBar.append(usersContainer);
         mainWindow.append(mainWindowTitle);
         mainWindow.append(chatWindow);
         mainWindow.append(messageInput);
         container.append(sideBar);
+        container.append(otherGroup);
         container.append(mainWindow);
         screen.append(container);
 
@@ -111,6 +182,8 @@ module.exports = {
                 case 'escape': process.exit(0);
                     break;
                 case 'C-c': channelList.focus(); // ctrl-c for channels
+                    break;
+                case 'C-u': userList.focus(); // ctrl-u for users
                     break;
                 case 'C-w': messageInput.focus(); // ctrl-w for write
                     break;
@@ -122,6 +195,7 @@ module.exports = {
 
         // Quit on Escape or Control-C.
         channelList.on('keypress', keyBindings);
+        userList.on('keypress', keyBindings);
         chatWindow.on('keypress', keyBindings);
         messageInput.on('keypress', function(ch, key){
             if (    key.full === 'escape' ||
@@ -156,6 +230,14 @@ module.exports = {
             sideBar.style.border = {'fg': '#888'};
             screen.render();
         });
+        userList.on('focus', function() {
+            sideBar.style.border = {'fg': '#cc6666'};
+            screen.render();
+        });
+        userList.on('blur', function() {
+            sideBar.style.border = {'fg': '#888'};
+            screen.render();
+        });
         messageInput.on('focus', function() {
             messageInput.style.border = {'fg': '#cc6666'};
             screen.render();
@@ -177,7 +259,10 @@ module.exports = {
             screen: screen,
             sideBar: sideBar,
             sideBarTitle: sideBarTitle,
+            sideBarSubTitle: sideBarSubTitle,
+            userList: userList,
             channelList: channelList,
+            otherGroup: otherGroup,
             mainWindow: mainWindow,
             mainWindowTitle: mainWindowTitle,
             chatWindow: chatWindow,

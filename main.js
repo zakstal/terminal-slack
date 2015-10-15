@@ -5,6 +5,7 @@ var ui = require('./userInterface.js'),
     users,
     channels,
     currentChannelId,
+    listOfUsers = {};
 
     // generates ids for messages
     getNextId = (function() {
@@ -70,7 +71,6 @@ slack.getChannels(function(error, response, data){
         console.log('Error: ', error, response || response.statusCode);
         return;
     }
-
     data = JSON.parse(data);
     channels = data.channels;
     components.channelList.setItems(
@@ -82,8 +82,31 @@ slack.getChannels(function(error, response, data){
 
 // get list of users
 slack.getUsers(function(response, error, data){
+    //if (error || response.statusCode != 200) {
+    //    console.log('Error: ', error, response || response.statusCode);
+    //    return;
+    //}
     users = JSON.parse(data).members;
+    var names = users.map(function (use) {
+        listOfUsers[use.name] = use.id;
+        return use.name;
+    });
+
+    components.userList.appendItems(names);
 });
+
+// get list of users
+slack.getIms(function(response, error, data){
+    var imlist = JSON.parse(data).members;
+
+    //
+    //var names = users.map(function (use) {
+    //    return use.name;
+    //});
+    //
+    //components.channelList.setItems(names);
+});
+
 
 // event handler when user selects a channel
 components.channelList.on('select', function(data) {
@@ -106,6 +129,76 @@ components.channelList.on('select', function(data) {
 
         // get the previous messages of the channel and display them
         slack.getChannelHistory(currentChannelId, function(error, response, data) {
+            if (error || response.statusCode != 200) {
+                console.log('Error: ', error, response || response.statusCode);
+                return;
+            }
+
+            data = JSON.parse(data);
+            components.chatWindow.deleteTop(); // remove loading message
+
+            // filter and map the messages before displaying them
+            data.messages
+                .filter(function(item) {
+                    return (item.type === 'message');
+                })
+                .map(function(message) {
+                    var len = users.length,
+                        username;
+
+                    // get the author
+                    for(var i=0; i < len; i++) {
+                        if (message.user === users[i].id) {
+                            username = users[i].name;
+                        }
+                    }
+
+                    return {text: message.text, username: username};
+                })
+                .forEach(function(message) {
+                    // add messages to window
+                    components.chatWindow.unshiftLine(
+                        '{bold}' + message.username + '{/bold}: ' + message.text
+                    );
+                });
+
+            // reset messageInput and give focus
+            components.messageInput.clearValue();
+            components.chatWindow.scrollTo(components.chatWindow.getLines().length);
+            components.messageInput.focus();
+            components.screen.render();
+
+            // mark the most recently read message
+            slack.markChannel(currentChannelId, data.latest);
+        });
+    });
+});
+
+// event handler when user selects a user to contact
+components.userList.on('select', function(data) {
+    var channelName = data.content;
+    var channelId;
+
+    channelId = listOfUsers[channelName];
+
+    //a channel was selected
+    components.mainWindowTitle.setContent('{bold}' + channelName + '{/bold}');
+    components.chatWindow.setContent('Getting messages...');
+    components.screen.render();
+
+    // join the selected channel
+    slack.openDirectIm(channelId, function(error, response, data) {
+        if (error || response.statusCode != 200) {
+            console.log('Error: ', error, response || response.statusCode);
+            return;
+        }
+
+        data = JSON.parse(data);
+        currentChannelId = data.channel.id;
+
+        //get the previous messages of the channel and display them
+        slack.getImHistory(currentChannelId, function(error, response, data) {
+
             if (error || response.statusCode != 200) {
                 console.log('Error: ', error, response || response.statusCode);
                 return;
