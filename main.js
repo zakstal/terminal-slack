@@ -94,7 +94,7 @@ slack.getUsers(function(response, error, data){
         return use.name;
     });
 
-    components.userList.appendItems(names);
+    components.userList.setItems(names);
 });
 
 // get list of users
