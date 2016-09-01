@@ -27,7 +27,8 @@ module.exports = {
                 },
                 style: {
                     border: {
-                        fg: '#888'
+                        fg: 'white',
+                        bg: 'white'
                     }
                 }
 
@@ -51,34 +52,35 @@ module.exports = {
 
             channelContainer = blessed.box({
                 width: '95%',
-                height: '45%',
-                //border: {
-                //    type: 'line'
-                //},
-                //style: {
-                //    border: {
-                //        fg: '#888'
-                //    }
-                //}
+                height: '50%',
+                top: '-2%',
+                border: {
+                    type: 'line'
+                },
+                style: {
+                    border: {
+                        fg: '#888'
+                    }
+                }
             }),
 
             usersContainer = blessed.box({
                 width: '95%',
                 height: '50%',
-                top: '45%',
-                //border: {
-                //    type: 'line'
-                //},
-                //style: {
-                //    border: {
-                //        fg: '#888'
-                //    }
-                //}
+                top: '49%',
+                border: {
+                    type: 'line'
+                },
+                style: {
+                    border: {
+                        fg: '#888'
+                    }
+                }
             }),
 
             channelList = blessed.list({
                 width: '90%',
-                height: '50%',
+                height: '80%',
                 left: '5%',
                 top: '14%',
                 keys: true,
@@ -94,7 +96,7 @@ module.exports = {
 
             userList = blessed.list({
                 width: '90%',
-                height: '50%',
+                height: '80%',
                 left: '5%',
                 top: '14%',
                 keys: true,
@@ -194,6 +196,11 @@ module.exports = {
         }
 
         // Quit on Escape or Control-C.
+        //channelList.on('mousedown', channelList.focus);
+        //userList.on('mousedown', userList.focus);
+        //chatWindow.on('mousedown', chatWindow.focus);
+        //messageInput.on('mousedown', messageInput.focus);
+
         channelList.on('keypress', keyBindings);
         userList.on('keypress', keyBindings);
         chatWindow.on('keypress', keyBindings);

@@ -4,12 +4,14 @@
   "description": "A terminal client for slack",
   "main": "main.js",
   "dependencies": {
-    "ws": "^0.7.1",
+    "blessed": "^0.1.56",
+    "node-notifier": "^4.6.1",
     "request": "^2.55.0",
-    "blessed": "^0.1.56"
+    "ws": "^0.7.1"
   },
   "devDependencies": {},
   "scripts": {
+    "start": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

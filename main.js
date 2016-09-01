@@ -1,12 +1,14 @@
 var ui = require('./userInterface.js'),
     slack = require('./slackClient.js'),
     fs = require('fs'),
+    slackNotification = require('./notify').slackNotification,
     components, // ui components
     listOfUsers = {},
     users,
     channels,
     currentChannelId,
     channelHistoryType;
+
 
 
     // generates ids for messages
@@ -85,9 +87,14 @@ function initSlack() {
             return;
         }
         components.channelList.setItems(
-          channels.map(function (channel) {
-              return channel.name;
-          })
+          channels.reduce(function (arr, channel) {
+
+              if (!channel.is_archived) {
+                  arr.push(channel.name);
+              }
+
+              return arr;
+          }, [])
         );
     });
 
@@ -124,6 +131,7 @@ function initSlack() {
 function initComponents () {
     components.channelList.on('select', function (data) {
         var channelName = data.content;
+        ListItemDefaultColor(data);
 
         // a channel was selected
         components.mainWindowTitle.setContent('{bold}' + channelName + '{/bold}');
@@ -257,6 +265,7 @@ function handleSentConfirmation(message) {
 
 function handleNewMessage(message) {
     if(message.channel !== currentChannelId) {
+        indicateNewMessage(message);
         return;
     }
 
@@ -280,4 +289,33 @@ function handleNewMessage(message) {
     );
     components.chatWindow.scroll(1);
     components.screen.render();
+}
+
+
+function indicateNewMessage (message) {
+    var channel = findId(channels, message.channel);
+    if (!channel) {
+        channel = findId(users, message.user);
+    }
+    //console.log("this is the message", message);
+    slackNotification(channel.name, message.text);
+    components.channelList.getItem(channel.name).style.bg = '#FF411A'
+}
+
+
+function findId(list, channelId) {
+    var channel;
+    for (var i = 0; i < list.length; i++) {
+        channel = list[i];
+        if (channelId === channel.id) {
+            break
+        }
+    }
+
+    return channel;
+}
+
+function ListItemDefaultColor (listItem) {
+    listItem.style.fg = 'black'
+    listItem.style.bg = 'transparent'
 }
