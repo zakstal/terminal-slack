@@ -1,7 +1,7 @@
 var ui = require('./userInterface.js'),
     slack = require('./slackClient.js'),
     fs = require('fs'),
-    components = ui.init(), // ui components
+    components, // ui components
     listOfUsers = {},
     users,
     channels,
@@ -18,6 +18,13 @@ var ui = require('./userInterface.js'),
     })();
 
 slack.init(function(data, ws) {
+    components = ui.init();
+    // set the channel list
+    console.log("this is the com");
+    components.channelList.setItems(['Connecting to Slack...']);
+    components.screen.render();
+    initComponents();
+    initSlack();
     var currentUser = data.self;
 
     // don't update focus until ws is connected
@@ -63,103 +70,108 @@ slack.init(function(data, ws) {
     });
 });
 
-// set the channel list
-components.channelList.setItems(['Connecting to Slack...']);
-components.screen.render();
 
-// set the channel list to the channels returned from slack
-slack.getChannels(function(error, response, data){
-    if (error || response.statusCode != 200) {
-        console.log('Error: ', error, response || response.statusCode);
-        return;
-    }
-    data = JSON.parse(data);
-    channels = data.channels;
-    components.channelList.setItems(
-        channels.map(function(channel) {
-            return channel.name;
-        })
-    );
-});
+function initSlack() {
 
-// get list of users
-slack.getUsers(function(response, error, data){
-    //if (error || response.statusCode != 200) {
-    //    console.log('Error: ', error, response || response.statusCode);
-    //    return;
-    //}
-    users = JSON.parse(data).members;
-    var names = users.map(function (use) {
-        listOfUsers[use.name] = use.id;
-        return use.name;
+    // set the channel list to the channels returned from slack
+    slack.getChannels(function (error, response, data) {
+        if (error || response.statusCode != 200) {
+            console.log('Error: ', error, response || response.statusCode);
+            return;
+        }
+        data = JSON.parse(data);
+        channels = data.channels;
+        if (!channels) {
+            return;
+        }
+        components.channelList.setItems(
+          channels.map(function (channel) {
+              return channel.name;
+          })
+        );
     });
 
-    components.userList.setItems(names);
-});
+    // get list of users
+    slack.getUsers(function (response, error, data) {
+        //if (error || response.statusCode != 200) {
+        //    console.log('Error: ', error, response || response.statusCode);
+        //    return;
+        //}
+        users = JSON.parse(data).members;
+        var names = users.map(function (use) {
+            listOfUsers[use.name] = use.id;
+            return use.name;
+        });
 
-// get list of users
-slack.getIms(function(response, error, data){
-    var imlist = JSON.parse(data).members;
+        components.userList.setItems(names);
+    });
 
-    //
-    //var names = users.map(function (use) {
-    //    return use.name;
-    //});
-    //
-    //components.channelList.setItems(names);
-});
+    // get list of users
+    slack.getIms(function (response, error, data) {
+        var imlist = JSON.parse(data).members;
+
+        //
+        //var names = users.map(function (use) {
+        //    return use.name;
+        //});
+        //
+        //components.channelList.setItems(names);
+    });
+}
 
 
 // event handler when user selects a channel
-components.channelList.on('select', function(data) {
-    var channelName = data.content;
+function initComponents () {
+    components.channelList.on('select', function (data) {
+        var channelName = data.content;
 
-    // a channel was selected
-    components.mainWindowTitle.setContent('{bold}' + channelName + '{/bold}');
-    components.chatWindow.setContent('Getting messages...');
-    components.screen.render();
+        // a channel was selected
+        components.mainWindowTitle.setContent('{bold}' + channelName + '{/bold}');
+        components.chatWindow.setContent('Getting messages...');
+        components.screen.render();
 
-    // join the selected channel
-    slack.joinChannel(channelName, function(error, response, data) {
-        if (error || response.statusCode != 200) {
-            console.log('Error: ', error, response || response.statusCode);
-            return;
-        }
+        // join the selected channel
+        slack.joinChannel(channelName, function (error, response, data) {
+            if (error || response.statusCode != 200) {
+                console.log('Error: ', error, response || response.statusCode);
+                return;
+            }
 
-        data = JSON.parse(data);
-        currentChannelId = data.channel.id;
+            data = JSON.parse(data);
+            currentChannelId = data.channel.id;
 
-        // get the previous messages of the channel and display them
-        renderChannelHistory(currentChannelId);
+            // get the previous messages of the channel and display them
+            renderChannelHistory(currentChannelId);
+        });
     });
-});
 
-// event handler when user selects a user to contact
-components.userList.on('select', function(data) {
-    var channelName = data.content;
-    var channelId;
+    // event handler when user selects a user to contact
+    components.userList.on('select', function (data) {
+        var channelName = data.content;
+        var channelId;
 
-    channelId = listOfUsers[channelName];
+        channelId = listOfUsers[channelName];
 
-    //a channel was selected
-    components.mainWindowTitle.setContent('{bold}' + channelName + '{/bold}');
-    components.chatWindow.setContent('Getting messages...');
-    components.screen.render();
+        //a channel was selected
+        components.mainWindowTitle.setContent('{bold}' + channelName + '{/bold}');
+        components.chatWindow.setContent('Getting messages...');
+        components.screen.render();
 
-    // join the selected channel
-    slack.openDirectIm(channelId, function(error, response, data) {
-        if (error || response.statusCode != 200) {
-            console.log('Error: ', error, response || response.statusCode);
-            return;
-        }
+        // join the selected channel
+        slack.openDirectIm(channelId, function (error, response, data) {
+            if (error || response.statusCode != 200) {
+                console.log('Error: ', error, response || response.statusCode);
+                return;
+            }
 
-        data = JSON.parse(data);
-        currentChannelId = data.channel.id;
+            data = JSON.parse(data);
+            currentChannelId = data.channel.id;
 
-        renderImHistory(currentChannelId);
+            renderImHistory(currentChannelId);
 
+        });
     });
-});
+}
 
 function renderImHistory(id) {
     renderHistory('getImHistory', id);

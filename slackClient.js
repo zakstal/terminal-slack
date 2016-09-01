@@ -4,6 +4,7 @@ var request = require('request'),
 
 module.exports = {
     init: function(callback) {
+        console.log("this is the token", TOKEN);
         var self = this;
         request.get({
             url: 'https://slack.com/api/rtm.start',
@@ -18,8 +19,12 @@ module.exports = {
             }
 
             data = JSON.parse(data);
-            var ws = new WebSocket(data.url);
-            callback(data, ws);
+            if (data.ok) {
+                var ws = new WebSocket(data.url);
+                callback(data, ws);
+            } else {
+                console.log('error in slackClient.js init: error message', data)
+            }
         });
     },
     getChannels: function(callback) {

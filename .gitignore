@@ -2,3 +2,7 @@
 *.swp
 *.swo
 .node_models
+
+.env
+npm-debug.log
+node_modules/
