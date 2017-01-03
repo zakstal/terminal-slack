@@ -61,7 +61,6 @@ slack.init(function(data, ws) {
             ' (pending - ' + id +' )'
         );
         components.chatWindow.scroll(1);
-
         components.screen.render();
         ws.send(JSON.stringify({
             id: id,
@@ -117,6 +116,7 @@ function initSlack() {
     slack.getIms(function (response, error, data) {
         var imlist = JSON.parse(data).members;
 
+        //console.log('this is the ims', data);
         //
         //var names = users.map(function (use) {
         //    return use.name;
@@ -300,6 +300,7 @@ function indicateNewMessage (message) {
     //console.log("this is the message", message);
     slackNotification(channel.name, message.text);
     components.channelList.getItem(channel.name).style.bg = '#FF411A'
+    components.screen.render();
 }
 
 

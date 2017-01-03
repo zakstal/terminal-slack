@@ -196,9 +196,17 @@ module.exports = {
         }
 
         // Quit on Escape or Control-C.
-        //channelList.on('mousedown', channelList.focus);
-        //userList.on('mousedown', userList.focus);
-        //chatWindow.on('mousedown', chatWindow.focus);
+        channelList.on('mousedown', channelList.focus);
+        channelList.on('wheeldown', function (e) {
+            channelList.scroll(1);
+            screen.render();
+        })
+        channelList.on('wheelup', function (e) {
+            channelList.scroll(-1);
+            screen.render();
+        })
+        userList.on('mousedown', userList.focus);
+        chatWindow.on('mousedown', chatWindow.focus);
         //messageInput.on('mousedown', messageInput.focus);
 
         channelList.on('keypress', keyBindings);
